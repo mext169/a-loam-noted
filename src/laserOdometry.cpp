@@ -68,6 +68,7 @@ constexpr double NEARBY_SCAN = 2.5;
 int skipFrameNum = 5;
 bool systemInited = false;
 
+// 存放各种点云的时间
 double timeCornerPointsSharp = 0;
 double timeCornerPointsLessSharp = 0;
 double timeSurfPointsFlat = 0;
@@ -100,6 +101,7 @@ double para_t[3] = {0, 0, 0};
 Eigen::Map<Eigen::Quaterniond> q_last_curr(para_q);
 Eigen::Map<Eigen::Vector3d> t_last_curr(para_t);
 
+// scanRegistration节点发来的点云
 std::queue<sensor_msgs::PointCloud2ConstPtr> cornerSharpBuf;
 std::queue<sensor_msgs::PointCloud2ConstPtr> cornerLessSharpBuf;
 std::queue<sensor_msgs::PointCloud2ConstPtr> surfFlatBuf;
@@ -326,6 +328,7 @@ int main(int argc, char **argv)
                             double minPointSqDis2 = DISTANCE_SQ_THRESHOLD;
                             // search in the direction of increasing scan line
                             // 寻找角点，在刚刚角点id上下分别继续寻找，目的是找到最近的角点，由于其按照线束进行排序，所以就是向上找
+                            // 索引变大，对应的线束也变大
                             for (int j = closestPointInd + 1; j < (int)laserCloudCornerLast->points.size(); ++j)
                             {
                                 // if in the same scan line, continue

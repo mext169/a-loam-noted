@@ -79,7 +79,7 @@ const int laserCloudHeight = 21;
 const int laserCloudDepth = 11;
 
 
-const int laserCloudNum = laserCloudWidth * laserCloudHeight * laserCloudDepth; //4851
+const int laserCloudNum = laserCloudWidth * laserCloudHeight * laserCloudDepth; //4851 这么多个边长50米的立方体
 
 
 int laserCloudValidInd[125];
@@ -92,7 +92,8 @@ pcl::PointCloud<PointType>::Ptr laserCloudSurfLast(new pcl::PointCloud<PointType
 // ouput: all visualble cube points
 pcl::PointCloud<PointType>::Ptr laserCloudSurround(new pcl::PointCloud<PointType>());
 
-// surround points in map to build tree
+// surround points in map to build tree 存放当前位姿周围5*5*3个cube中的点云
+// 这里面的点是在地图坐标系下的
 pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMap(new pcl::PointCloud<PointType>());
 pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMap(new pcl::PointCloud<PointType>());
 
@@ -108,14 +109,16 @@ pcl::KdTreeFLANN<PointType>::Ptr kdtreeCornerFromMap(new pcl::KdTreeFLANN<PointT
 pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurfFromMap(new pcl::KdTreeFLANN<PointType>());
 
 double parameters[7] = {0, 0, 0, 1, 0, 0, 0};
-Eigen::Map<Eigen::Quaterniond> q_w_curr(parameters);
+Eigen::Map<Eigen::Quaterniond> q_w_curr(parameters); // 当前帧在世界坐标系下的位姿 一直在变化
 Eigen::Map<Eigen::Vector3d> t_w_curr(parameters + 4);
 
 // wmap_T_odom * odom_T_curr = wmap_T_curr;
 // transformation between odom's world and map's world frame
+// 一直维护的 odom到map的变换 可以把车当前在odom系下的坐标 变换到map系下
 Eigen::Quaterniond q_wmap_wodom(1, 0, 0, 0);
 Eigen::Vector3d t_wmap_wodom(0, 0, 0);
 
+// 当前帧在odom系下的位姿
 Eigen::Quaterniond q_wodom_curr(1, 0, 0, 0);
 Eigen::Vector3d t_wodom_curr(0, 0, 0);
 
@@ -126,6 +129,7 @@ std::queue<sensor_msgs::PointCloud2ConstPtr> fullResBuf;
 std::queue<nav_msgs::Odometry::ConstPtr> odometryBuf;
 std::mutex mBuf;
 
+// 下采样器，对角点和面点下采样
 pcl::VoxelGrid<PointType> downSizeFilterCorner;
 pcl::VoxelGrid<PointType> downSizeFilterSurf;
 
@@ -521,7 +525,7 @@ void process()
 			// 以上操作相当于维护了一个局部地图，保证当前帧不在这个局部地图的边缘，这样才可以从地图中获取足够的约束
 			int laserCloudValidNum = 0;
 			int laserCloudSurroundNum = 0;
-			// 从当前格子为中心，选出地图中一定范围的点云
+			// 从当前格子为中心，选出地图中一定范围的点云 5 * 5 * 3
 			for (int i = centerCubeI - 2; i <= centerCubeI + 2; i++)
 			{
 				for (int j = centerCubeJ - 2; j <= centerCubeJ + 2; j++)
@@ -632,6 +636,7 @@ void process()
 							// 特征向量就是线特征的方向
 							Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
 							Eigen::Vector3d curr_point(pointOri.x, pointOri.y, pointOri.z);
+                            // https://zhuanlan.zhihu.com/p/435001757
 							// 最大特征值大于次大特征值的3倍认为是线特征
 							if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1])
 							{ 

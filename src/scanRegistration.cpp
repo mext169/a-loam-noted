@@ -63,10 +63,10 @@ const int systemDelay = 0;
 int systemInitCount = 0;
 bool systemInited = false;
 int N_SCANS = 0;
-float cloudCurvature[400000];
-int cloudSortInd[400000];
-int cloudNeighborPicked[400000];
-int cloudLabel[400000];
+float cloudCurvature[400000]; // 存的是在N_SCANS个scan组成的大点云中点的曲率
+int cloudSortInd[400000]; // 存的是在N_SCANS个scan组成的大点云中点的索引
+int cloudNeighborPicked[400000]; // 存的是在N_SCANS个scan组成的大点云中的点 是否 还可以用作特征点 0表示可用 1表示不再可用
+int cloudLabel[400000]; // 对点进行标记 2是曲率大的点 1是曲率稍大的点 -1是平坦的点 0是一般的点
 
 bool comp (int i,int j) { return (cloudCurvature[i]<cloudCurvature[j]); }
 
@@ -257,6 +257,8 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     // 全部集合到一个点云里面去，但是使用两个数组标记其实和结果，这里分别+5和-6是为了计算曲率方便
     for (int i = 0; i < N_SCANS; i++)
     { 
+        // laserCloud是把全部N_SCANS条线的点放到一个PointCloud中
+        // scanStartInd和scanEndInd分别记录了每条线上适合提取特征点的起始和结束位置在laserCloud中的索引
         scanStartInd[i] = laserCloud->size() + 5;
         *laserCloud += laserCloudScans[i];
         scanEndInd[i] = laserCloud->size() - 6;
@@ -327,7 +329,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
                         cornerPointsSharp.push_back(laserCloud->points[ind]);
                         cornerPointsLessSharp.push_back(laserCloud->points[ind]);
                     }
-                    // 以及20个曲率稍微大一些的点
+                    // 以及额外18个曲率稍微大一些的点
                     else if (largestPickedNum <= 20)
                     {                        
                         // label置1表示曲率稍微大
