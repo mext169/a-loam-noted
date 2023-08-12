@@ -51,6 +51,11 @@ struct LidarEdgeFactor
 	{
 		return (new ceres::AutoDiffCostFunction<
 				LidarEdgeFactor, 3, 4, 3>(
+//                               ^  ^  ^
+//                               |  |  |
+//                  残差的维度 ___|  |  |
+//              优化变量q的维度 _____|  |
+//              优化变量t的维度 ________|
 			new LidarEdgeFactor(curr_point_, last_point_a_, last_point_b_, s_)));
 	}
 

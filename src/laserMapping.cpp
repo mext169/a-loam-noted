@@ -696,6 +696,7 @@ void process()
 							// find the norm of plane
 							// 调用eigen接口求解该方程，解就是这个平面的法向量
 							Eigen::Vector3d norm = matA0.colPivHouseholderQr().solve(matB0);
+							// Ax + By + Cz + 1 = 0，全部除以法向量的模长，方程依旧成立，而且使得法向量归一化了
 							double negative_OA_dot_norm = 1 / norm.norm();
 							// 法向量归一化
 							norm.normalize();
@@ -707,6 +708,7 @@ void process()
 							{
 								// if OX * n > 0.2, then plane is not fit well
 								// 这里相当于求解点到平面的距离
+								// 点(x0, y0, z0)到平面Ax + By + Cz + 1 = 0 的距离公式 = fabs(Ax0 + By0 + Cz0 + D) / sqrt(A^2 + B^2 + C^2)
 								if (fabs(norm(0) * laserCloudSurfFromMap->points[pointSearchInd[j]].x +
 										 norm(1) * laserCloudSurfFromMap->points[pointSearchInd[j]].y +
 										 norm(2) * laserCloudSurfFromMap->points[pointSearchInd[j]].z + negative_OA_dot_norm) > 0.2)
